@@ -1,4 +1,3 @@
-# api/tasks.py
 from celery import shared_task
 import pandas as pd
 from django.core.mail import send_mail
@@ -8,6 +7,7 @@ from django.contrib.auth.models import Group
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 @shared_task
 def parse_excel(sub_id):
@@ -21,8 +21,10 @@ def parse_excel(sub_id):
 
         df = pd.read_excel(sub.file.path, engine='openpyxl')
 
-        required_headers = ['timestamp', 'value', 'title', 'unit', 'start_date', 'end_date', 'type', 'sector']
-        missing_headers = [col for col in required_headers if col not in df.columns]
+        required_headers = ['timestamp', 'value', 'title',
+                            'unit', 'start_date', 'end_date', 'type', 'sector']
+        missing_headers = [
+            col for col in required_headers if col not in df.columns]
         if missing_headers:
             sub.status = 'error'
             sub.comments = f'Missing required headers: {", ".join(missing_headers)}'
@@ -30,7 +32,8 @@ def parse_excel(sub_id):
             return
 
         # Check metadata consistency
-        metadata_columns = ['title', 'unit', 'start_date', 'end_date', 'type', 'sector']
+        metadata_columns = ['title', 'unit',
+                            'start_date', 'end_date', 'type', 'sector']
         metadata = {}
         for col in metadata_columns:
             unique_values = df[col].dropna().unique()
@@ -39,7 +42,8 @@ def parse_excel(sub_id):
                 sub.comments = f'Inconsistent values in {col}. All rows must have the same value.'
                 sub.save()
                 return
-            metadata[col] = unique_values[0] if len(unique_values) > 0 else None
+            metadata[col] = unique_values[0] if len(
+                unique_values) > 0 else None
 
         # Parse data with validation
         parsed_data = []
@@ -87,6 +91,7 @@ def parse_excel(sub_id):
         except:
             pass
 
+
 @shared_task
 def notify_manager(sub_id):
     try:
@@ -102,7 +107,9 @@ def notify_manager(sub_id):
                     [manager.email],
                 )
     except Exception as e:
-        logger.error(f'Error notifying managers for submission {sub_id}: {str(e)}')
+        logger.error(
+            f'Error notifying managers for submission {sub_id}: {str(e)}')
+
 
 @shared_task
 def notify_senior(sub_id):
@@ -119,7 +126,9 @@ def notify_senior(sub_id):
                     [senior.email],
                 )
     except Exception as e:
-        logger.error(f'Error notifying seniors for submission {sub_id}: {str(e)}')
+        logger.error(
+            f'Error notifying seniors for submission {sub_id}: {str(e)}')
+
 
 @shared_task
 def notify_provider_rejection(sub_id):
@@ -133,7 +142,9 @@ def notify_provider_rejection(sub_id):
                 [sub.uploaded_by.email],
             )
     except Exception as e:
-        logger.error(f'Error notifying provider for rejection {sub_id}: {str(e)}')
+        logger.error(
+            f'Error notifying provider for rejection {sub_id}: {str(e)}')
+
 
 @shared_task
 def notify_manager_rejection(sub_id):
@@ -150,7 +161,9 @@ def notify_manager_rejection(sub_id):
                     [manager.email],
                 )
     except Exception as e:
-        logger.error(f'Error notifying managers for senior rejection {sub_id}: {str(e)}')
+        logger.error(
+            f'Error notifying managers for senior rejection {sub_id}: {str(e)}')
+
 
 @shared_task
 def send_reminders():
@@ -169,7 +182,8 @@ def send_reminders():
                     )
 
         # Pending for seniors
-        pending_manager_approved = Submission.objects.filter(status='manager_approved')
+        pending_manager_approved = Submission.objects.filter(
+            status='manager_approved')
         if pending_manager_approved.exists():
             seniors_group = Group.objects.get(name='SeniorMoEOfficial')
             for senior in seniors_group.user_set.all():
