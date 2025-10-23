@@ -1,10 +1,8 @@
 services:
   db:
     image: postgres:14
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-energy_db}
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pass}
+    env_file:
+      - ./api/.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -22,8 +20,8 @@ services:
       - "1025:1025"
     volumes:
       - mailpit_data:/data
-    environment:
-      - MP_DATABASE=/data/mailpit.db
+    env_file:
+      - ./api/.env
 
   api:
     build:
@@ -40,27 +38,13 @@ services:
       - db
       - redis
       - mailpit
-    environment:
-      - DEBUG=1
-      - SECRET_KEY=${SECRET_KEY:-django-insecure-secret}
-      - POSTGRES_DB=${POSTGRES_DB:-energy_db}
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pass}
-      - POSTGRES_HOST=db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - EMAIL_HOST=${EMAIL_HOST:-mailpit}
-      - EMAIL_PORT=${EMAIL_PORT:-1025}
-      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-from@example.com}
-
+    env_file:
+      - ./api/.env
   celery_worker:
-    build: 
-     context: ./api
-     dockerfile: Dockerfile
-    command: celery -A energy_approval worker -l INFO
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    command: celery -A core worker -l INFO
     volumes:
       - .:/app
     depends_on:
@@ -68,27 +52,14 @@ services:
       - redis
       - api
       - mailpit
-    environment:
-      - DEBUG=1
-      - SECRET_KEY=${SECRET_KEY:-django-insecure-secret}
-      - POSTGRES_DB=${POSTGRES_DB:-energy_db}
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pass}
-      - POSTGRES_HOST=db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - EMAIL_HOST=${EMAIL_HOST:-mailpit}
-      - EMAIL_PORT=${EMAIL_PORT:-1025}
-      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-from@example.com}
+    env_file:
+      - ./api/.env
 
   celery_beat:
     build:
-     context: ./api
-     dockerfile: Dockerfile
-    command: celery -A energy_approval beat -l INFO
+      context: ./api
+      dockerfile: Dockerfile
+    command: celery -A core beat -l INFO
     volumes:
       - .:/app
     depends_on:
@@ -96,21 +67,8 @@ services:
       - redis
       - api
       - mailpit
-    environment:
-      - DEBUG=1
-      - SECRET_KEY=${SECRET_KEY:-django-insecure-secret}
-      - POSTGRES_DB=${POSTGRES_DB:-energy_db}
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pass}
-      - POSTGRES_HOST=db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - EMAIL_HOST=${EMAIL_HOST:-mailpit}
-      - EMAIL_PORT=${EMAIL_PORT:-1025}
-      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-from@example.com}
+    env_file:
+      - ./api/.env
 
 volumes:
   postgres_data:
